@@ -1,0 +1,36 @@
+FROM php:8.2-apache
+
+WORKDIR /var/www/html
+
+RUN apt-get update && apt-get install -y \
+    unzip \
+    libpq-dev \
+    && docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    pdo_mysql
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Define the virtual host configuration
+RUN echo "<VirtualHost *:80>\n\
+    ServerName localhost\n\
+    DocumentRoot /var/www/html/public\n\
+    <Directory /var/www/html/public>\n\
+        AllowOverride All\n\
+        Order Allow,Deny\n\
+        Allow from All\n\
+        Require all granted\n\
+    </Directory>\n\
+</VirtualHost>" > /etc/apache2/sites-available/000-default.conf
+
+RUN a2enmod rewrite
+
+ENV APP_ENV=local
+
+EXPOSE 80
+
+# Set up the entrypoint command
+CMD ["apache2-foreground"]
